@@ -1,0 +1,7 @@
+Modification of G-Code generator for grill drilling from
+http://wiki.linuxcnc.org/cgi-bin/wiki.pl?Simple_LinuxCNC_G-Code_Generators#Grill_Drilling_Software
+
+Additional features:
+- don't shift every second line of holes by 1/2 step (selectable)
+- optimize tool moving (one line from down to up, next line from up to down).
+

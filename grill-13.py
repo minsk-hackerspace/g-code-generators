@@ -36,6 +36,7 @@
 """
 
 from Tkinter import *
+import tkFileDialog
 from math import *
 import os
 import math
@@ -78,30 +79,36 @@ class Application(Frame):
         Radiobutton(self.EntryFrame, text='Rectangle',   variable=self.ShapeVar, value = 2, command=self.DoIt).grid(row=1, column=1, sticky=E)
         Radiobutton(self.EntryFrame, text='Oval',   variable=self.ShapeVar, value = 3, command=self.DoIt).grid(row=1, column=2)
 
+        self.st001 = Label(self.EntryFrame, text="Holes pattern")
+        self.st001.grid(row=2, column=0)
 
+        self.Interleaved = IntVar()
+        self.Interleaved.set(1)
+        Radiobutton(self.EntryFrame, text="Rectangular", variable=self.Interleaved, value=0, command=self.DoIt).grid(row=2, column=1, sticky=W)
+        Radiobutton(self.EntryFrame, text="Interleaved", variable=self.Interleaved, value=1, command=self.DoIt).grid(row=2, column=2)
 
         self.st01 = Label(self.EntryFrame, text='Preamble')
-        self.st01.grid(row=2, column=0)
+        self.st01.grid(row=3, column=0)
         self.PreambleVar = StringVar()
         self.PreambleVar.set('G17 G21 G90 G64 P0.05 M3 S2000 M7')
         self.Preamble = Entry(self.EntryFrame, textvariable=self.PreambleVar ,width=35)
-        self.Preamble.grid(row=2, column=1)
+        self.Preamble.grid(row=3, column=1)
 
         self.NormalColor =  self.Preamble.cget('bg')
 
         self.st02 = Label(self.EntryFrame, text='X Center of Grill')
-        self.st02.grid(row=3, column=0)
+        self.st02.grid(row=4, column=0)
         self.XGrillCenterVar = StringVar()
         self.XGrillCenterVar.set('3.0')
         self.XGrillCenter = Entry(self.EntryFrame, textvariable=self.XGrillCenterVar ,width=15)
-        self.XGrillCenter.grid(row=3, column=1)
+        self.XGrillCenter.grid(row=4, column=1)
 
         self.st03 = Label(self.EntryFrame, text='Y Center of Grill')
-        self.st03.grid(row=4, column=0)
+        self.st03.grid(row=4, column=2)
         self.YGrillCenterVar = StringVar()
         self.YGrillCenterVar.set('4.0')
         self.YGrillCenter = Entry(self.EntryFrame, textvariable=self.YGrillCenterVar ,width=15)
-        self.YGrillCenter.grid(row=4, column=1)
+        self.YGrillCenter.grid(row=4, column=3)
 
         self.st04 = Label(self.EntryFrame, text='Dimension of Grill(X,Y)')
         self.st04.grid(row=5, column=0)
@@ -169,6 +176,8 @@ class Application(Frame):
 
         self.ToClipboard = Button(self.EntryFrame, text='To Clipboard', command=self.CopyClipboard)
         self.ToClipboard.grid(row=13, column=1)
+        self.ToFile = Button(self.EntryFrame, text='To file', command=self.WriteToFile)
+        self.ToFile.grid(row=13, column=2)
 
         if IN_AXIS:
             self.quitButton = Button(self, text='Write to AXIS and Quit',command=self.WriteToAxis)
@@ -321,13 +330,21 @@ class Application(Frame):
 
         first = 1;
         numholes = 0;
-        YSpacing = sqrt((Spacing * Spacing) - ((Spacing/2.0) * (Spacing/2.0)))
+
+        if self.Interleaved.get()==0:
+            YSpacing = Spacing
+        else:
+            YSpacing = sqrt((Spacing * Spacing) - ((Spacing/2.0) * (Spacing/2.0)))
 
         # grid computed so it is always symmetrical about center point
+        ystep = -1
+        y = -yholes-1
         for x in range(-xholes,xholes):
-            for y in range(-yholes-1,yholes+1):
+            ystep *= -1
+            for yi in range(-yholes-1,yholes+1):
+                y += ystep
                 CurY = y * YSpacing
-                if (y % 2)==0:
+                if (y % 2)==0 or (self.Interleaved.get()==0):
                     CurX = x * Spacing
                 else:
                     CurX = x * Spacing + Spacing/2.0
@@ -392,6 +409,17 @@ class Application(Frame):
         for line in self.gcode:
             sys.stdout.write(line+'\n')
         self.quit()
+
+    def WriteToFile(self):
+        file_opt = {}
+        file_opt['defaultextension'] = '.ngc'
+        file_opt['filetypes'] = [('all files', '.*'), ('linuxCNC G-code files', '.ngc')]
+        file_opt['title'] = 'Save G-code as file'
+        file_opt['parent'] = self
+        file = tkFileDialog.asksaveasfile(mode='w', **file_opt)
+        if file != None:
+            for line in self.gcode:
+                file.write(line + '\n')
 
 app = Application()
 app.master.title("Grill.py 1.3 by Alex Bobotek and Lawrence Glaister")
